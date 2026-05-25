@@ -8,4 +8,5 @@ public interface ISprava{
     List<Task> getAllTasks();   //    → достать все задачи из базы
     Task updateTask(int idOldTask, Task newTask); //    → изменить задачу
     Task deleteTask(int id);    //    → удалить задачу
+    Task findTask(int id);
 }

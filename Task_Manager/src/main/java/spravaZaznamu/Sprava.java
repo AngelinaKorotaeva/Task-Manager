@@ -8,7 +8,6 @@ public class Sprava implements ISprava{
     List<Task> taskList;
 
     public Sprava() {
-        ObjectNotNull(taskList);
         this.taskList = new ArrayList<>();
     }
 
@@ -45,6 +44,17 @@ public class Sprava implements ISprava{
                 Task returnTask = taskList.get(i);
                 taskList.remove(i);
                 return returnTask;
+            }
+        }
+        return null;
+    }
+    
+    @Override
+    public Task findTask(int id) {
+        IdNotNull(id);
+        for (int i = 0; i < taskList.size(); i++) {
+            if (id == taskList.get(i).getId()) {
+                return taskList.get(i);
             }
         }
         return null;
