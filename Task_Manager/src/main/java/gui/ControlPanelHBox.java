@@ -55,9 +55,6 @@ public class ControlPanelHBox {
     private final ListView<Task> listTasks;
     private final ObservableList<Task> obsListTasks = FXCollections.observableArrayList();
 
-    private Priority_task aktualPriority = null;
-    private Status_task aktualStatus = null;
-
     public ControlPanelHBox(HBox hbox, Sprava sprava) {
 
         this.spravaTasks = sprava;
@@ -65,10 +62,6 @@ public class ControlPanelHBox {
         priorityTask.setItems(priority);
         priorityTask.getSelectionModel().clearSelection();
         priorityTask.setPrefWidth(CHOICE_BOX_WIDTH);
-
-        priorityTask.setOnAction((evPrior) -> {
-            actionPriority();
-        });
 
         statusTask.setItems(status);
         statusTask.getSelectionModel().clearSelection();
@@ -216,12 +209,6 @@ public class ControlPanelHBox {
         hbox.getChildren().add(grid);
     }
 
-    private void actionPriority() {
-        if (priorityTask.getSelectionModel().getSelectedItem() != null) {
-            refreshList(priorityTask.getSelectionModel().getSelectedItem(), aktualStatus);
-        }
-    }
-
     private void btnAddTaskAction() {
         btnAddTask.setOnAction((event) -> {
             openAddTaskWindow();
@@ -329,7 +316,7 @@ public class ControlPanelHBox {
                     Task newTask = new Task(oldTask.getId(), nameField.getText(), descriptionField.getText(),
                             oldTask.getPriority(), oldTask.getStatus(), deadlinePicker.getValue());
                     spravaTasks.updateTask(oldTask.getId(), newTask);
-                    int i = obsListTasks.indexOf(oldTask.toString());
+                    int i = obsListTasks.indexOf(oldTask);
                     obsListTasks.set(i, newTask);
 
                     listTasks.getSelectionModel().select(newTask);
@@ -355,7 +342,6 @@ public class ControlPanelHBox {
                 }
                 obsListTasks.remove(listTasks.getSelectionModel().getSelectedItem());
                 spravaTasks.deleteTask(task.getId());
-                IdSprava--;
             }
         });
     }
@@ -436,37 +422,4 @@ public class ControlPanelHBox {
         });
     }
 
-    private void refreshList(Priority_task prior, Status_task status) {
-        if (prior != null) {
-            switch (prior) {
-                case HIGH -> {
-
-                }
-                case MEDIUM -> {
-
-                }
-                case LOW -> {
-
-                }
-            }
-        }
-
-        if (status != null) {
-            switch (status) {
-                case TO_DO -> {
-
-                }
-                case IN_PROGRESS -> {
-
-                }
-                case CANCELED -> {
-
-                }
-                case COMPLETED -> {
-
-                }
-            }
-        }
-
-    }
 }

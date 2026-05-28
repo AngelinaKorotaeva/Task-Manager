@@ -15,7 +15,7 @@ public class Database {
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS tasks (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    title TEXT NOT NULL,
+                    name TEXT NOT NULL,
                     description TEXT,
                     priority TEXT NOT NULL,
                     status TEXT NOT NULL,
