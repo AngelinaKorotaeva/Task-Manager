@@ -11,8 +11,8 @@ public class Task_Manager extends Application{
     private Sprava spravaTasks = new Sprava();
     private ControlPanelHBox hBox;
     
-    private static final int ROOT_WIDTH = 700;
-    private static final int ROOT_HEIGHT = 500;
+    private static final int ROOT_WIDTH = 730;
+    private static final int ROOT_HEIGHT = 510;
     private static final int SPACING = 10;
 
     public static void main(String[] args) {

@@ -2,6 +2,7 @@ package gui;
 
 import enumClass.Priority_task;
 import enumClass.Status_task;
+import java.util.List;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -19,6 +20,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import spravaZaznamu.Sprava;
 import javafx.scene.control.DatePicker;
+import javafx.scene.control.ListCell;
 import zaznamy.Task;
 
 public class ControlPanelHBox {
@@ -29,12 +31,16 @@ public class ControlPanelHBox {
     private final Button btnAddTask = new Button("Add Task");
     private final Button btnUpdateTask = new Button("Update Task");
     private final Button btnDeleteTask = new Button("Delete Task");
+    private final Button btnDoFiltr = new Button("Do filter");
+
+    private final TextField tfFiltr = new TextField();
 
     private final ChoiceBox<Priority_task> priorityTask = new ChoiceBox<>();
     private final ChoiceBox<Status_task> statusTask = new ChoiceBox<>();
 
-    private final HBox hboxPanelList = new HBox();
+    private final VBox vboxPanelList = new VBox();
     private final VBox vboxPanelButtons = new VBox();
+    private final HBox hboxFiltrsPanel = new HBox();
 
     private final ObservableList<Priority_task> priority = FXCollections.observableArrayList(Priority_task.values());
     private final ObservableList<Status_task> status = FXCollections.observableArrayList(Status_task.values());
@@ -43,54 +49,177 @@ public class ControlPanelHBox {
     private static final int ROOT_HEIGHT = 500;
     private static final int VELKY_WIDTH = 560;
     private static final int BTN_WIDTH = 90;
+    private static final int CHOICE_BOX_WIDTH = 100;
     private static final int SPACING = 10;
 
-    private final ListView<String> listTasks;
-    private final ObservableList<String> obsListTasks = FXCollections.observableArrayList();
+    private final ListView<Task> listTasks;
+    private final ObservableList<Task> obsListTasks = FXCollections.observableArrayList();
+
+    private Priority_task aktualPriority = null;
+    private Status_task aktualStatus = null;
 
     public ControlPanelHBox(HBox hbox, Sprava sprava) {
+
         this.spravaTasks = sprava;
 
         priorityTask.setItems(priority);
         priorityTask.getSelectionModel().clearSelection();
+        priorityTask.setPrefWidth(CHOICE_BOX_WIDTH);
+
+        priorityTask.setOnAction((evPrior) -> {
+            actionPriority();
+        });
+
         statusTask.setItems(status);
         statusTask.getSelectionModel().clearSelection();
+        statusTask.setPrefWidth(CHOICE_BOX_WIDTH);
 
-        this.btnAddTask.setPrefWidth(BTN_WIDTH);
-        this.btnUpdateTask.setPrefWidth(BTN_WIDTH);
-        this.btnDeleteTask.setPrefWidth(BTN_WIDTH);
-
-        this.listTasks = new ListView();
-        listTasks.setMinSize(VELKY_WIDTH, ROOT_HEIGHT);
-        listTasks.setMaxSize(VELKY_WIDTH, ROOT_HEIGHT);
-        listTasks.setItems(obsListTasks);
+        btnAddTask.setPrefWidth(BTN_WIDTH);
+        btnUpdateTask.setPrefWidth(BTN_WIDTH);
+        btnDeleteTask.setPrefWidth(BTN_WIDTH);
+        btnDoFiltr.setPrefWidth(BTN_WIDTH);
 
         btnAddTaskAction();
         btnUpdateTaskAction();
         btnDeleteTaskAction();
         priorityTaskAction();
         statusTaskAction();
+        btnDoFilterAction();
 
+        // ================= GRID =================
         GridPane grid = new GridPane();
         grid.setMaxSize(ROOT_WIDTH, ROOT_HEIGHT);
+        grid.setPadding(new Insets(5));
+        grid.setVgap(5);
+        grid.setHgap(10);
 
-        hboxPanelList.getChildren().addAll(listTasks);
-        vboxPanelButtons.getChildren().addAll(btnAddTask, btnUpdateTask, btnDeleteTask, priorityTask, statusTask);
+        // ================= FILTER PANEL =================
+        tfFiltr.setPrefWidth(110);
+        tfFiltr.setPrefHeight(25);
 
-        hboxPanelList.setMaxSize(VELKY_WIDTH, ROOT_HEIGHT);
-        hboxPanelList.setSpacing(SPACING);
-        hboxPanelList.setAlignment(Pos.CENTER);
-        vboxPanelButtons.setMaxSize((ROOT_WIDTH - VELKY_WIDTH), ROOT_HEIGHT);
-        vboxPanelButtons.setMinSize((ROOT_WIDTH - VELKY_WIDTH), ROOT_HEIGHT);
+        hboxFiltrsPanel.getChildren().addAll(
+                new Label("filtr:"),
+                tfFiltr,
+                btnDoFiltr
+        );
+
+        hboxFiltrsPanel.setAlignment(Pos.CENTER_LEFT);
+        hboxFiltrsPanel.setSpacing(5);
+
+        // ================= LIST =================
+        listTasks = new ListView<>();
+        listTasks.setItems(obsListTasks);
+
+        listTasks.setMinSize(VELKY_WIDTH, 430);
+        listTasks.setMaxSize(VELKY_WIDTH, 430);
+
+        // Говорим ListView, как нужно рисовать каждую ячейку
+        listTasks.setCellFactory(param -> new ListCell<Task>() {
+            @Override
+            protected void updateItem(Task task, boolean empty) {
+                super.updateItem(task, empty);
+
+                if (empty || task == null) {
+                    setText(null);
+                    setStyle("");
+                    return;
+                }
+
+                String statusIcon = "";
+
+                switch (task.getStatus()) {
+                    case TO_DO:
+                        statusIcon = "○ ";
+                        break;
+                    case IN_PROGRESS:
+                        statusIcon = "⏳ ";
+                        break;
+                    case COMPLETED:
+                        statusIcon = "✓ ";
+                        break;
+                    case CANCELED:
+                        statusIcon = "✕ ";
+                        break;
+                }
+                setText(statusIcon + task.toString());
+
+                String color = "";
+
+                switch (task.getPriority()) {
+                    case HIGH:
+                        color = "#ffb3b3";
+                        break;
+
+                    case MEDIUM:
+                        color = "#fff0b3";
+                        break;
+
+                    case LOW:
+                        color = "#b3ffb3";
+                        break;
+                }
+
+                if (isSelected()) {
+
+                    setStyle(
+                            "-fx-background-color: " + color + ";"
+                            + "-fx-border-color: hotpink;"
+                            + "-fx-border-width: 2;"
+                            + "-fx-text-fill: black;"
+                    );
+
+                } else {
+
+                    setStyle(
+                            "-fx-background-color: " + color + ";"
+                            + "-fx-text-fill: black;"
+                    );
+                }
+            }
+        });
+
+        vboxPanelList.getChildren().add(listTasks);
+
+        vboxPanelList.setMinSize(VELKY_WIDTH, 430);
+        vboxPanelList.setMaxSize(VELKY_WIDTH, 430);
+
+        vboxPanelList.setSpacing(SPACING);
+        vboxPanelList.setAlignment(Pos.CENTER);
+
+        // ================= BUTTONS =================
+        vboxPanelButtons.getChildren().addAll(
+                btnAddTask,
+                btnUpdateTask,
+                btnDeleteTask,
+                priorityTask,
+                statusTask
+        );
+
+        vboxPanelButtons.setMinSize(
+                ROOT_WIDTH - VELKY_WIDTH,
+                430
+        );
+
+        vboxPanelButtons.setMaxSize(
+                ROOT_WIDTH - VELKY_WIDTH,
+                430
+        );
+
         vboxPanelButtons.setSpacing(SPACING);
         vboxPanelButtons.setAlignment(Pos.CENTER);
 
-        grid.add(hboxPanelList, 0, 0);
-        grid.add(vboxPanelButtons, 1, 0);
+        // ================= GRID ADD =================
+        grid.add(hboxFiltrsPanel, 0, 0);
+        grid.add(vboxPanelList, 0, 1);
+        grid.add(vboxPanelButtons, 1, 1);
 
-        hbox.setSpacing(SPACING);
-        //HBox.setHgrow(listTasks, Priority.NEVER);
-        hbox.getChildren().addAll(grid);
+        hbox.getChildren().add(grid);
+    }
+
+    private void actionPriority() {
+        if (priorityTask.getSelectionModel().getSelectedItem() != null) {
+            refreshList(priorityTask.getSelectionModel().getSelectedItem(), aktualStatus);
+        }
     }
 
     private void btnAddTaskAction() {
@@ -144,7 +273,7 @@ public class ControlPanelHBox {
             IdSprava++;
 
             spravaTasks.addTask(task);
-            obsListTasks.add(task.toString());
+            obsListTasks.add(task);
 
             stage.close();
         });
@@ -161,17 +290,17 @@ public class ControlPanelHBox {
     private void btnUpdateTaskAction() {
         btnUpdateTask.setOnAction((event) -> {
             if (listTasks.getSelectionModel().getSelectedItem() != null) {
-                String[] words = listTasks.getSelectionModel().getSelectedItem().split(", ");
                 Stage stage = new Stage();
                 stage.setTitle("Update Task");
 
                 TextField nameField = new TextField();
-                nameField.setPromptText(words[1]);
+                nameField.setPromptText(listTasks.getSelectionModel().getSelectedItem().getName());
 
                 TextField descriptionField = new TextField();
-                descriptionField.setPromptText(words[2]);
+                descriptionField.setPromptText(listTasks.getSelectionModel().getSelectedItem().getDescription());
 
                 DatePicker deadlinePicker = new DatePicker();
+                deadlinePicker.setValue(listTasks.getSelectionModel().getSelectedItem().getDeadline());
 
                 Button saveButton = new Button("Save");
                 Button cancelButton = new Button("Cancel");
@@ -196,14 +325,14 @@ public class ControlPanelHBox {
                         alert.showAndWait();
                         return;
                     }
-                    Task oldTask = findTask(listTasks.getSelectionModel().getSelectedItem());
+                    Task oldTask = listTasks.getSelectionModel().getSelectedItem();
                     Task newTask = new Task(oldTask.getId(), nameField.getText(), descriptionField.getText(),
                             oldTask.getPriority(), oldTask.getStatus(), deadlinePicker.getValue());
-                    spravaTasks.updateTask(Integer.parseInt(words[0]), newTask);
+                    spravaTasks.updateTask(oldTask.getId(), newTask);
                     int i = obsListTasks.indexOf(oldTask.toString());
-                    obsListTasks.set(i, newTask.toString());
+                    obsListTasks.set(i, newTask);
 
-                    listTasks.getSelectionModel().select(newTask.toString());
+                    listTasks.getSelectionModel().select(newTask);
                 });
 
                 cancelButton.setOnAction((eventCancel) -> {
@@ -220,8 +349,7 @@ public class ControlPanelHBox {
     private void btnDeleteTaskAction() {
         btnDeleteTask.setOnAction((event) -> {
             if (listTasks.getSelectionModel().getSelectedItem() != null) {
-                String str = listTasks.getSelectionModel().getSelectedItem();
-                Task task = findTask(str);
+                Task task = listTasks.getSelectionModel().getSelectedItem();
                 if (task == null) {
                     return;
                 }
@@ -236,14 +364,17 @@ public class ControlPanelHBox {
         priorityTask.setOnAction((event) -> {
             if (listTasks.getSelectionModel().getSelectedItem() != null
                     && priorityTask.getSelectionModel().getSelectedItem() != null) {
-                String str = listTasks.getSelectionModel().getSelectedItem();
-                Task task = findTask(str);
+                Task task = listTasks.getSelectionModel().getSelectedItem();
                 if (task == null) {
                     return;
                 }
                 task.setPriority(priorityTask.getSelectionModel().getSelectedItem());
                 spravaTasks.updateTask(task.getId(), task);
-                obsListTasks.set(task.getId(), task.toString());
+
+                int index = listTasks.getSelectionModel().getSelectedIndex();
+                obsListTasks.set(index, task);
+                listTasks.refresh();
+
             }
         });
     }
@@ -252,22 +383,90 @@ public class ControlPanelHBox {
         statusTask.setOnAction((event) -> {
             if (listTasks.getSelectionModel().getSelectedItem() != null
                     && statusTask.getSelectionModel().getSelectedItem() != null) {
-                String str = listTasks.getSelectionModel().getSelectedItem();
-                Task task = findTask(str);
+                Task task = listTasks.getSelectionModel().getSelectedItem();
                 if (task == null) {
                     return;
                 }
                 task.setStatus(statusTask.getSelectionModel().getSelectedItem());
                 spravaTasks.updateTask(task.getId(), task);
-                obsListTasks.set(task.getId(), task.toString());
+                obsListTasks.set(listTasks.getSelectionModel().getSelectedIndex(), task);
+                listTasks.refresh();
             }
         });
     }
 
-    private Task findTask(String str) {
-        String[] words = str.split(", ");
-        Task task = spravaTasks.findTask(Integer.parseInt(words[0]));
+    private void btnDoFilterAction() {
+        btnDoFiltr.setOnAction((event) -> {
+            String filterText = tfFiltr.getText().trim();
 
-        return task;
+            if (filterText.isEmpty()) {
+                obsListTasks.setAll(spravaTasks.getAllTasks());
+                listTasks.refresh();
+                return;
+            }
+
+            String[] filters = filterText.split(",\\s");
+            List<Task> tasks = spravaTasks.getAllTasks();
+            ObservableList<Task> filteredTasks = FXCollections.observableArrayList();
+
+            for (Task task : tasks) {
+
+                boolean matches = false;
+
+                for (String filter : filters) {
+
+                    if (filter.toUpperCase().equals(task.getPriority().name())
+                            || filter.toUpperCase().equals(task.getStatus().name())
+                            || task.getName().contains(filter)
+                            || task.getDescription().contains(filter)) {
+
+                        matches = true;
+                        break;
+                    }
+                }
+
+                if (matches) {
+                    filteredTasks.add(task);
+                }
+            }
+
+            obsListTasks.setAll(filteredTasks);
+            listTasks.refresh();
+
+        });
+    }
+
+    private void refreshList(Priority_task prior, Status_task status) {
+        if (prior != null) {
+            switch (prior) {
+                case HIGH -> {
+
+                }
+                case MEDIUM -> {
+
+                }
+                case LOW -> {
+
+                }
+            }
+        }
+
+        if (status != null) {
+            switch (status) {
+                case TO_DO -> {
+
+                }
+                case IN_PROGRESS -> {
+
+                }
+                case CANCELED -> {
+
+                }
+                case COMPLETED -> {
+
+                }
+            }
+        }
+
     }
 }
